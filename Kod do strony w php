@@ -1,0 +1,197 @@
+<?php
+$servername = "127.0.0.1";
+$username = "s226";
+$password = "ask9D9ame8en";
+$dbname = "dbs226";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+if ($conn->connect_error) {
+    die("Błąd połączenia: " . $conn->connect_error);
+}
+?>
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Okręty Wojenne</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #2e2e2e;
+            color: white;
+        }
+        header, footer {
+            background-color: #b30000;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+        }
+        footer {
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+            left: 0;
+        }
+        #container {
+            display: flex;
+            min-height: calc(100vh - 80px);
+        }
+        nav {
+            width: 200px;
+            background-color: #1f1f1f;
+            padding: 20px;
+        }
+        nav a {
+            display: block;
+            color: white;
+            margin: 15px 0;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        nav a:hover {
+            color: red;
+        }
+        main {
+            flex-grow: 1;
+            padding: 20px;
+            margin-bottom: 60px;
+        }
+        .section {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 15px;
+            background-color: #f5f5f5;
+            color: black;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Okręty wojenne</h1>
+    </header>
+
+    <div id="container">
+        <nav>
+            <a href="#" onclick="showSection('home')">Strona główna</a>
+            <a href="#" onclick="showSection('lista')">Lista okrętów</a>
+            <a href="#" onclick="showSection('zad1')">Zadanie 1</a>
+            <a href="#" onclick="showSection('zad2')">Zadanie 2</a>
+        </nav>
+
+        <main>
+            <div id="home" class="section active">
+                <img src="yamato_art.jpg" alt="Yamato" style="max-width: 100%;">
+            </div>
+
+            <div id="lista" class="section">
+                <h2>Lista okrętów</h2>
+                <?php
+                $sql = "SELECT o.id_okretu, o.nazwa, o.typ, o.rok_zwodowania, k.klasa, k.kraj
+                        FROM okrety o
+                        JOIN klasy_okretow k ON o.typ = k.typ
+                        ORDER BY o.id_okretu ASC";
+                $result = $conn->query($sql);
+
+                if ($result && $result->num_rows > 0) {
+                    echo "<table><tr>
+                            <th>ID okrętu</th>
+                            <th>Nazwa okrętu</th>
+                            <th>Typ</th>
+                            <th>Rok zwodowania</th>
+                            <th>Klasa</th>
+                            <th>Kraj</th>
+                          </tr>";
+                    while($row = $result->fetch_assoc()) {
+                        echo "<tr>
+                                <td>{$row['id_okretu']}</td>
+                                <td>{$row['nazwa']}</td>
+                                <td>{$row['typ']}</td>
+                                <td>{$row['rok_zwodowania']}</td>
+                                <td>{$row['klasa']}</td>
+                                <td>{$row['kraj']}</td>
+                              </tr>";
+                    }
+                    echo "</table>";
+                } else {
+                    echo "Brak danych.";
+                    if (!$result) echo "<br>Błąd SQL: " . $conn->error;
+                }
+                ?>
+            </div>
+
+            <div id="zad1" class="section">
+
+                <p><strong>Zapisz zapytanie SQL, w wyniku którego uzyskamy nazwę typu oraz informację, w którym roku po raz pierwszy zwodowano okręt danego typu. Uwzględnić należy jedynie te okręty, które zwodowano po roku 1920.</strong></p>
+                <p>SELECT typ, MIN(rok_zwodowania) AS rok_zwodowania FROM okrety WHERE rok_zwodowania > 1920 GROUP BY typ;</p>
+                <?php
+                $sql1 = "SELECT typ, MIN(rok_zwodowania) AS rok_zwodowania FROM okrety WHERE rok_zwodowania > 1920 GROUP BY typ;";
+                $result1 = $conn->query($sql1);
+
+                if ($result1 && $result1->num_rows > 0) {
+                    echo "<table><tr><th>Typ</th><th>Pierwszy rok zwodowania</th></tr>";
+                    while($row = $result1->fetch_assoc()) {
+                        echo "<tr><td>{$row['typ']}</td><td>{$row['rok_zwodowania']}</td></tr>";
+                    }
+                    echo "</table>";
+                } else {
+                    echo "Brak wyników.";
+                    if (!$result1) echo "<br>Błąd SQL: " . $conn->error;
+                }
+                ?>
+            </div>
+
+            <div id="zad2" class="section">
+                <p><strong>Zapisz zapytanie SQL, które da w wyniku nazwy typów okrętów wraz nazwami krajów jakie je opracowały oraz liczbą okrętów tego typu jakie są wpisane do bazy. Posortuj wyniki malejąco po liczbie okrętów.</strong></p>
+                <p>SELECT k.typ, k.kraj, COUNT(o.id_okretu) AS liczba_okretow FROM klasy_okretow k INNER JOIN okrety o ON k.typ = o.typ GROUP BY k.typ, k.kraj ORDER BY liczba_okretow DESC;</p>
+                <?php
+                $sql2 = "SELECT k.typ, k.kraj, COUNT(o.id_okretu) AS liczba_okretow 
+                         FROM klasy_okretow k 
+                         INNER JOIN okrety o ON k.typ = o.typ 
+                         GROUP BY k.typ, k.kraj 
+                         ORDER BY liczba_okretow DESC;";
+                $result2 = $conn->query($sql2);
+
+                if ($result2 && $result2->num_rows > 0) {
+                    echo "<table><tr><th>Typ</th><th>Kraj</th><th>Liczba okrętów</th></tr>";
+                    while($row = $result2->fetch_assoc()) {
+                        echo "<tr><td>{$row['typ']}</td><td>{$row['kraj']}</td><td>{$row['liczba_okretow']}</td></tr>";
+                    }
+                    echo "</table>";
+                } else {
+                    echo "Brak wyników.";
+                    if (!$result2) echo "<br>Błąd SQL: " . $conn->error;
+                }
+                ?>
+            </div>
+        </main>
+    </div>
+
+    <footer>
+        Autor: Agata Kulesza 2b
+    </footer>
+
+    <script>
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(sec => {
+                sec.classList.remove('active');
+            });
+            document.getElementById(id).classList.add('active');
+        }
+    </script>
+</body>
+</html>
